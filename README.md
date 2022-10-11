@@ -7,4 +7,4 @@ The program accounts for the possibility of your lessons taking place in differe
 The input is taken from the text file "schedule_input.txt".
 The output is displayed in the text file "schedule_output.txt".
 
-Make sure the input and output files are stored in the same directory as the source code of the program.
+Make sure the input and output files are stored in the same directory as the file with the source code of the program.
