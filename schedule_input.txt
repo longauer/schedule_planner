@@ -1,0 +1,5 @@
+"name_of_the_period" #integer_lable_of_the_location "start" "end" "day_of_the_week"
+	  .                          .                 .      .            .
+ 	  .                          .                 .      .            .       
+          .                          .                 .      .            .     
+          .                          .                 .      .            .
