@@ -5,7 +5,6 @@
 
 ## the expected time and space complexity of the algorithm is O(n2^n) 
 
-from calendar import TUESDAY
 import sys
 import copy
 from collections import deque
