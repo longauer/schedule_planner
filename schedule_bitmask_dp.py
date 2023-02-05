@@ -119,7 +119,7 @@ class SchedulePlanner:
                 if self.is_valid(per): periods.append(per)
         return periods
 
-    def build_schedule(self, periods, dist):
+    def build_schedule(self, periods):
         schedule = []; schedule_end = []; schedule_start = []; schedule_mask = dict()
 
         ## necessary preprocessing of the sorted array of the starting points and ending points of the periods
@@ -146,7 +146,7 @@ class SchedulePlanner:
         for i in range(len(schedule)):
             if (not schedule[i].identity()):
                 for j in range(i, -1, -1):
-                    if (schedule[j].identity() and schedule[j].val + dist[schedule[j].location][schedule[i].location]<=schedule[i].val):
+                    if (schedule[j].identity() and schedule[j].val + self.dist[schedule[j].location][schedule[i].location]<=schedule[i].val):
                         schedule[i].prev_end = schedule[j].sorted_ind; break
 
 
