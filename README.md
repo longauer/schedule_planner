@@ -46,6 +46,7 @@ The program `schedule_bitmask_dp.py` generates optimal schedules through mathema
 ```bash
 git clone https://github.com/yourusername/schedule-optimizer.git
 cd schedule-optimizer
+```
 
 
 
@@ -59,6 +60,7 @@ dist = [
     [5, 0, 3],  # From location 1
     [7, 3, 0]   # From location 2
 ]
+```
 
 - Row index = source location
 - Column index = destination location
@@ -73,7 +75,7 @@ mandatory = [0, 2]  # Must include lessons with these IDs
 free_windows = [("Monday", "11:30", "13:00")]
 vacancy_mode = "END"  # Options: START/END/BOTH
 lesson_preferences = {3: 2.0, 5: 1.5}  # Weighted priorities
-
+```
 
 
 ## Usage & Output 🖥️
