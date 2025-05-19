@@ -7,7 +7,6 @@
 
 import sys
 import copy
-from collections import deque
 import time
 from functools import wraps
 
@@ -98,7 +97,7 @@ class SchedulePlanner:
         ## construct the array periods
 
         matchings = [{"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4}, {"Monday":4, "Tuesday":3, "Wednesday":2, "Thursday":1, "Friday":0},
-                    {"Monday":4, "Tuesday":2, "Wednesday":0, "Thursday":1, "Friday":3}]
+                    {"Monday":4, "Tuesday":2, "Wednesday":0, "Thursday":1, "Friday":3}, {"Monday":4, "Tuesday":1, "Wednesday":0, "Thursday":2, "Friday":3}]
 
         Period.DynamicDay = matchings[self.concentration_where]
 
@@ -190,7 +189,7 @@ class SchedulePlanner:
     
     def compile_schedule(self):
         ## array containing the period objects
-        periods = self.data_proc(self.concentration_where)
+        periods = self.data_proc()
 
         ## contains the starting and ending points of the periods and practices
         schedule = []
@@ -201,7 +200,7 @@ class SchedulePlanner:
         ## only the starting points
         schedule_start = []
 
-        schedule, schedule_start, schedule_end, schedule_mask = self.build_schedule(periods, self.dist)
+        schedule, schedule_start, schedule_end, schedule_mask = self.build_schedule(periods)
 
         condition = lambda sched_obj1, sched_obj2 : sched_obj1.val + self.dist[sched_obj1.location][schedule_start[sched_obj2.index].location]<schedule_start[sched_obj2.index].val
 
@@ -266,7 +265,7 @@ class SchedulePlanner:
         
             if flag:
                 print("_______________________________________________________________________", file=out)
-                print(f'the best solution - from the {"start" if self.concentration_where == 0 else "middle" if self.concentration_where == 2 else "end"} of the week', file=out)
+                print(f'the best solution - from the {"start" if self.concentration_where == 0 else "middle 1" if self.concentration_where == 2 else "middle 2" if self.concentration_where == 3 else "end"} of the week', file=out)
                 last_day = None
                 for i in optimal_schedule:
                     if i.day != last_day:
@@ -278,7 +277,7 @@ class SchedulePlanner:
                     print("", file=out)
 
     def compile_schedule_all_versions(self):
-        for i in range(3):
+        for i in range(4):
             self.concentration_where = i
             self.compile_schedule()
 
@@ -292,140 +291,70 @@ def time_duration(f):
     return wrapper
 
 
+def load_mandatory_subjects(filename : str):
+    res = list()
+    with open (filename, "r") as file:
+        for line in file.readlines():
+            res.append(line.strip())
+    return res
+
+def load_dist_matrix(filename : str):
+    matrix = []
+    ## first find out the dimension of the square matrix
+    with open(filename, "r") as file:
+        line = file.readline()
+        line = [int(x) for x in line.split()]
+        
+        matrix.append(line)
+        for i in range(len(line)-1):
+            line = file.readline()
+            line = [int(x) for x in line.split()]
+            matrix.append(line)
+    return matrix
+
+def load_free_intervals(filename : str):
+    res = list()
+    with open (filename, "r") as file:
+        for line in file.readlines():
+            res.append(tuple([x for x in line.strip().split()]))
+    return res
+
 @time_duration
 def main():
+    config_file_name = sys.argv[1]
 
-    ## the matrix of distances between locations (in minutes)
-    ## 0 - location 0
-    ## 1 - location 1
-    ## 2 - location 2
+    config = open(config_file_name, "r")
+    file_names = config.read().split()
+    print("filenames:\n")
+    for i in file_names:
+        print(i)
 
-    dist = [[0, 50, 60, 30],
-            [50, 0, 70, 35],
-            [60, 70, 0, -1],
-            [30, 35, -1, 0]]
+    config.close()
+    ## the matrix of distances between locations (in minutes) example
+    
+    ## loading the distance matrix
+    dist = load_dist_matrix(file_names[0])
+
 
     ## mandatory subjects (guaranteed to be included in the solution if such solution exists)
-    mandatory = ["Programming_prac", "Algorithmization_prac","Programming", "Algorithmization", "Discrete_mathematics", "Discrete_mathematics_prac", 
-                 "Computer_networks","Linear_algebra", "Linear_algebra_prac", "Computer_principles", "Python_machine_learning", "Python_machine_learning_prac",
-                 "Combinatorics_and_graphs", "Combinatorics_and_graphs_prac", "programming_in_c++", "programming_in_c++_prac"]
+    mandatory = load_mandatory_subjects(file_names[1])
 
 
     ## time windows that has to remain free during the week (from when, until when, day)
-    free_intervals = []
+    free_intervals = load_free_intervals(file_names[2])
 
     ## pushing the lessons to the start/end/middle of the week (0, 1, 2, respectively)
     concentration_where = 0
 
-    ## the input file
-    input_file_name = "schedule_input.txt"
+
+    ## the input file 
+    input_file_name = file_names[3]
 
     ## the output file name
-    output_file_name = "schedule_output.txt"
+    output_file_name = file_names[4]
 
     SchedulePlanner(dist, mandatory, free_intervals, concentration_where, input_file_name, output_file_name).compile_schedule_all_versions()
 
 
 if __name__ == "__main__":
     main()
-
-
-## example input data:
-
-# Discrete_mathematics 0 12:20 13:50 Monday
-# Discrete_mathematics 1 12:20 13:50 Tuesday
-# Discrete_mathematics 0 14:00 15:30 Tuesday
-# Computer_networks 0 12:20 13:50 Tuesday
-# Computer_networks 1 15:40 17:10 Wednesday
-# Computer_networks 0 15:40 17:10 Thursday
-# Algorithmization 0 10:40 12:10 Monday
-# Algorithmization 1 9:00 10:30 Tuesday
-# Algorithmization 0 15:40 17:10 Wednesday
-# Programming 1 9:00 10:30 Monday
-# Programming 0 10:40 12:10 Tuesday
-# Programming 0 17:20 18:50 Wednesday
-# Linear_algebra 0 15:40 17:10 Tuesday
-# Linear_algebra 1 12:20 13:50 Wednesday
-# Linear_algebra 0 10:40 12:10 Friday
-# Computer_principles 1 10:40 12:10 Monday
-# Computer_principles 0 14:00 15:30 Thursday
-# Computer_principles 0 12:20 13:50 Friday
-# Python_machine_learning 1 12:20 13:50 Monday
-# Python_machine_learning 0 9:00 10:30 Tuesday
-# Database_systems 0 17:20 18:50 Monday
-# Database_systems 1 9:00 10:30 Thursday
-# Combinatorics_and_graphs 1 10:40 12:10 Tuesday
-# Combinatorics_and_graphs 0 9:00 10:30 Wednesday
-# Statement_a_predicate_logic 0 14:00 15:30 Monday
-# Statement_a_predicate_logic 1 14:00 15:30 Tuesday
-# Database_systems_prac 1 9:00 10:30 Tuesday
-# Database_systems_prac 1 14:00 15:30 Wednesday
-# Database_systems_prac 1 15:40 17:10 Wednesday
-# Database_systems_prac 1 10:40 12:10 Thursday
-# Database_systems_prac 1 12:20 13:50 Thursday
-# Database_systems_prac 1 14:00 15:30 Thursday
-# Database_systems_prac 1 15:40 17:10 Thursday
-# Database_systems_prac 1 9:00 10:30 Friday
-# Discrete_mathematics_prac 0 12:20 13:50 Monday
-# Discrete_mathematics_prac 0 15:40 17:10 Monday
-# Discrete_mathematics_prac 1 15:40 17:10 Monday
-# Discrete_mathematics_prac 0 10:40 12:10 Tuesday
-# Discrete_mathematics_prac 0 12:20 13:50 Tuesday
-# Discrete_mathematics_prac 1 15:40 17:10 Tuesday
-# Discrete_mathematics_prac 1 9:00 10:30 Wednesday
-# Discrete_mathematics_prac 0 14:00 15:30 Wednesday
-# Discrete_mathematics_prac 0 15:40 17:10 Wednesday
-# Discrete_mathematics_prac 0 10:40 12:10 Thursday
-# Discrete_mathematics_prac 0 12:20 13:50 Thursday
-# Discrete_mathematics_prac 0 14:00 15:30 Thursday
-# Discrete_mathematics_prac 0 9:00 10:30 Friday
-# Discrete_mathematics_prac 0 10:40 12:10 Friday
-# Combinatorics_and_graphs_prac 1 15:40 17:10 Monday
-# Combinatorics_and_graphs_prac 1 9:00 10:30 Tuesday
-# Combinatorics_and_graphs_prac 1 14:00 15:30 Tuesday
-# Combinatorics_and_graphs_prac 1 17:20 18:50 Tuesday
-# Combinatorics_and_graphs_prac 1 15:40 17:10 Wednesday
-# Combinatorics_and_graphs_prac 1 9:00 10:30 Thursday
-# Combinatorics_and_graphs_prac 1 10:40 12:10 Thursday
-# Combinatorics_and_graphs_prac 1 17:20 18:50 Thursday
-# Combinatorics_and_graphs_prac 1 10:40 12:10 Friday
-# Programming_prac 0 9:50 10:30 Tuesday
-# Algorithmization_prac 0 10:40 12:10 Tuesday
-# Python_machine_learning_prac 1 14:00 15:30 Monday
-# Python_machine_learning_prac 1 9:00 10:30 Wednesday
-# Linear_algebra_prac 0 12:20 13:50 Monday
-# Linear_algebra_prac 0 14:00 15:30 Monday
-# Linear_algebra_prac 0 9:00 10:30 Tuesday
-# Linear_algebra_prac 1 10:40 12:10 Tuesday
-# Linear_algebra_prac 1 14:00 15:30 Tuesday
-# Linear_algebra_prac 0 17:20 18:50 Tuesday
-# Linear_algebra_prac 1 9:00 10:30 Wednesday
-# Linear_algebra_prac 0 14:00 15:30 Wednesday
-# Linear_algebra_prac 0 15:40 17:10 Wednesday
-# Linear_algebra_prac 0 17:20 18:50 Wednesday
-# Linear_algebra_prac 0 9:00 10:30 Thursday
-# Linear_algebra_prac 0 10:40 12:10 Thursday
-# Linear_algebra_prac 0 12:20 13:50 Thursday
-# Linear_algebra_prac 0 14:00 15:30 Thursday
-# Linear_algebra_prac 0 9:00 10:30 Friday
-# Linear_algebra_prac 0 10:40 12:10 Friday
-# Linear_algebra_prac 0 14:00 15:30 Friday
-# Statement_a_predicate_logic_prac 1 15:40 17:10 Tuesday
-# Statement_a_predicate_logic_prac 1 14:00 15:30 Wednesday
-# Statement_a_predicate_logic_prac 1 9:00 10:30 Thursday
-# Statement_a_predicate_logic_prac 1 10:40 12:10 Thursday
-# Statement_a_predicate_logic_prac 1 12:20 13:50 Thursday
-# Statement_a_predicate_logic_prac 1 9:00 10:30 Friday
-# Statement_a_predicate_logic_prac 1 10:40 12:10 Friday
-# Statement_a_predicate_logic_prac 1 12:20 13:50 Friday
-# programming_in_c++ 0 10:40 12:10 Wednesday
-# programming_in_c++ 1 14:00 15:30 Wednesday
-# programming_in_c++_prac 0 12:20 13:50 Monday
-# programming_in_c++_prac 1 12:20 13:50 Monday
-# programming_in_c++_prac 1 12:20 13:50 Tuesday
-# programming_in_c++_prac 1 14:00 15:30 Wednesday
-# programming_in_c++_prac 1 17:20 18:50 Wednesday
-# programming_in_c++_prac 1 12:20 13:50 Thursday
-# programming_in_c++_prac 1 15:40 17:10 Thursday
-# programming_in_c++_prac 1 10:40 12:10 Friday
-# programming_in_c++_prac 1 12:20 13:50 Friday
